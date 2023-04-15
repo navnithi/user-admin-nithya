@@ -1,12 +1,13 @@
 const registerUser = (req, res) => {
     try {
+        console.log(req.body)
         res.status(201).json({
             message: "user is created"
         })
         
     } catch (error) {
          res.status(500).json({
-           error: error.message,
+           message: error.message,
          });
         
     }
