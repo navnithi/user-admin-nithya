@@ -21,9 +21,18 @@
   - we have received the data
   - check input data validtion
   - secure the password
+  - send the verification to user
   - verify the user email (valid 10min)
+  - get the token from req body
+  - check token existance
+  - verify the token and decode data
+   - handle error
+   - decode data
+   - check user exist or not
+   - create the user without the image
+   - create the user with image
   - storing the user in database
-  - /login
+- /login
   - email & password
   - token
  - /logout

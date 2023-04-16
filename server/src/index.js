@@ -3,7 +3,7 @@ const morgan = require("morgan");
 
 const dev = require("./config");
 const connectDB = require("./config/DB.JS");
-const userRouter = require("./routes");
+const userRouter = require("./routes/users");
 const bodyParser = require("body-parser");
 
 const app = express();
