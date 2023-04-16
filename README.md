@@ -15,3 +15,19 @@
  - default: is_admin, is_verified, createdAt
  - create register route with express-formidable
  - create register controller
+
+3. Create User
+ - /register
+  - we have received the data
+  - check input data validtion
+  - secure the password
+  - verify the user email (valid 10min)
+  - storing the user in database
+  - /login
+  - email & password
+  - token
+ - /logout
+ - /profile -> if you are logged in
+ - reset password
+ - forget password
+ - crud -> create, read, update, delete

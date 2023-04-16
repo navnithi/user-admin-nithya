@@ -35,7 +35,7 @@ const userSchema = new Schema({
       message: (props) => `${props.value} is not a valid phone number!`,
     },
     required: [true, "phone number is required"],
-    minlength: [8, "mimimum length of the password should be 8"],
+    minlength: [10, "mimimum length of the password should be 10"],
   },
 
   is_admin: {
