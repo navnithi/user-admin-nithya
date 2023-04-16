@@ -38,7 +38,7 @@ const registerUser = async (req, res) => {
      
      // store
      const token = jwt.sign({ name, email, phone, hashedPassword, image }, 
-      dev.app.jwtSecretKey, {expiresIn: "5m"});
+      dev.app.jwtSecretKey, {expiresIn: "10m"});
 
       //prepare email
       const emailData = {
@@ -56,7 +56,7 @@ const registerUser = async (req, res) => {
 
     res.status(201).json({
       message: "Verification mail sent, please click",
-      token : token
+      token : token,
     });
   } catch (error) {
     res.status(500).json({
@@ -65,4 +65,27 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser };
+const verifyEmail =  (req, res) => {
+  try {
+    const token = req.body;
+    
+    if(!token){
+      res.status(404).json({
+        message: "token in missing",
+      });
+    }
+
+    res.status(200).json({
+      message: "email is verified",
+    });
+    
+    
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    })
+    
+  }
+}
+
+module.exports = { registerUser, verifyEmail };
