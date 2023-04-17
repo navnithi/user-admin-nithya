@@ -9,6 +9,7 @@ const dev = {
     smtpUserName: process.env.SMTP_USERNAME,
     smtpPassword: process.env.SMTP_PASSWORD,
     clientUrl: process.env.CLIENT_URL,
+    sessionSecretKey: process.env.SESSION_SECRET_KEY,
   },
 
   db: {
