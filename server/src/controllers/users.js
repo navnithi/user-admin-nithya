@@ -1,7 +1,7 @@
 const fs = require ("fs")
 const jwt = require("jsonwebtoken");
 
-const { securePassword } = require("../helpers/bcryptPassword");
+const { securePassword, comparePassword } = require("../helpers/bcryptPassword");
 const User = require("../models/users");
 const dev = require("../config");
 const { sendEmailWithNodeMailer } = require("../helpers/email");
@@ -43,7 +43,7 @@ const registerUser = async (req, res) => {
       { expiresIn: "10m" }
     );
 
-    console.log(token)
+   
 
     //prepare email
     const emailData = {
@@ -70,62 +70,194 @@ const registerUser = async (req, res) => {
   }
 };
 
-const verifyEmail = async(req, res) => {
-
+const verifyEmail = async (req, res) => {
   try {
-    const {token} = req.body;
-    console.log(token)
-    if(!token) {
+    const { token } = req.body;
+    if (!token) {
       return res.status(404).json({
-        message: "token is missing"
-      })
-    }
-
-    jwt.verify(token, dev.app.jwtSecretKey, async function (err, decoded) {
-      if(err){
-        return res.status(401).json({
-          message: "token is expired",
-        });
-      }
-      const {name, email, hashedPassword, phone, image} = decoded;
-      
-      const isExist = await User.findOne({ email });
-    if (isExist) {
-      return res.status(400).json({
-        message: "user already exist",
+        message: "token is missing",
       });
     }
-    //create user without imaage
+    jwt.verify(token, dev.app.jwtSecretKey, async function (err, decoded) {
+      if (err) {
+        return res.status(401).json({
+          message: "token is expire",
+        });
+      }
+      const { name, email, phone, hashedPassword, image } = decoded;
+      const isExist = await User.findOne({ email: email });
+      if (isExist) {
+        return res.status(400).json({
+          message: "user with this email already exist",
+        });
+      }
+      //create user
       const newUser = new User({
         name: name,
         email: email,
         password: hashedPassword,
         phone: phone,
-         
-      })
+        is_varified: 1,
+      });
+      if (image) {
+        newUser.image.data = fs.readFileSync(image.path);
+        newUser.image.contentType = image.type;
+      }
+      const user = await newUser.save();
+      if (!user) {
+        res.status(400).json({
+          message: "user was not repeated",
+        });
+      }
+      res.status(201).json({
+        
+        message: "user was created.ready to sign in",
+      });
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 
-      if(image){
+const loginUser = async (req, res) =>{
+  try {
+    const {email, password} = req.body;
+     if ( !email || !password )
+       return res.status(404).json({
+         message: " email or password is missing",
+       });
 
+     if (password.length < 5){
+      return res.status(404).json({
+         message: "min length for password should be 5",
+       });
+     }
+       
+
+       const user = await User.findOne({ email: email });
+      if (!user) {
+        return res.status(400).json({
+          message: "user does not exist with this email please register",
+        });
+      }
+
+      const isPasswordMatched =  await comparePassword(password, user.password)
+
+      if (!isPasswordMatched) {
+        return res.status(400).json({
+          message: "email or password does not match",
+        });
       }
 
 
-    });
 
-    
-    return res.status(200).json({
-      message: "email is verified"
-    })
+    res.status(200).json({
+      user: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone
+      },
+      message: "login successful",
+    });
     
   } catch (error) {
     res.status(500).json({
-      message : error.message
-    })
-    
-  }
-  
-  
+      message: error.message,
+    });
+  } 
+
 }
 
+const logOutUser = (req, res) => {
+  try {
+    res.status(200).json({
+      message: "log out successful",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+const userProfile = (req, res) => {
+  try {
+    res.status(200).json({
+      message: "log out successful",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+module.exports = { registerUser, verifyEmail, loginUser, logOutUser, userProfile};
+
+/*const verifyEmail = async (req, res) =>{
+  try {
+     const {token} = req.body
+     if(!token){
+      return res.status(404).json({
+        message: "Token is missing",
+      });
+
+     }
+
+     jwt.verify(token, dev.app.jwtSecretKey, async function (err, decoded) {
+       if(err){
+
+         return res.status(401).json({
+           message: "Token is expired",
+         });
+
+       }
+       const { name, email, hashedPassword, phone, image } = decoded;
+        const isExist = await User.findOne({ email:email });
+    if (isExist) {
+      return res.status(400).json({
+        message: "user already exist",
+      });
+    }
+       //create user
+       const newUser = new User ({
+        name: name,
+        email: email,
+        password: hashedPassword,
+        phone: phone
+       })
+       if(image){
+        newUser.image.data = fs.readFileSync(image.path)
+        newUser.image.contentType = image.type
+
+       }
+
+       //save user
+       const user = await newUser.save()
+       if(!user){
+        res.status(400).json({
+          message: "user not repeated",
+        });
+
+       }
+       res.status(200).json({
+         message: "user created ready to sigin",
+       });
+     });
+
+    res.status(200).json({
+      message: "email is verified",
+    });
+  
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+
+}*/
 
 
-module.exports = { registerUser, verifyEmail };
+
+

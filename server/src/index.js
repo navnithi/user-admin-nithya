@@ -10,10 +10,11 @@ const app = express();
 
 const PORT = dev.app.serverPort
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan("dev"))
 app.use("/api/users", userRouter);
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended:true}));
+
 
 
 app.get("/", (req, res) => {
