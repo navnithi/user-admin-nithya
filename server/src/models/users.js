@@ -17,7 +17,7 @@ const userSchema = new Schema({
       validator: function (v) {
         return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(v);
       },
-      message: (props) => `${props.value} is not a valid phone email!`,
+      message: (props) => `${props.value} is not a valid email!`,
     },
   },
   password: {
