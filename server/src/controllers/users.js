@@ -5,6 +5,7 @@ const { securePassword, comparePassword } = require("../helpers/bcryptPassword")
 const User = require("../models/users");
 const dev = require("../config");
 const { sendEmailWithNodeMailer } = require("../helpers/email");
+const { use } = require("../routes/users");
 
 const registerUser = async (req, res) => {
   try {
@@ -158,7 +159,8 @@ const loginUser = async (req, res) =>{
       user: {
         name: user.name,
         email: user.email,
-        phone: user.phone
+        phone: user.phone,
+        image: user.image
       },
       message: "login successful",
     });
@@ -173,8 +175,29 @@ const loginUser = async (req, res) =>{
 
 const logOutUser = (req, res) => {
   try {
+    req.session.destroy();
+    res.clearCookie("user_session");
     res.status(200).json({
+      
+      ok: true,
       message: "log out successful",
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: error.message,
+    });
+  }
+};
+
+const userProfile = async (req, res) => {
+  try {
+
+    const userData = await User.findById(req.session.userId, {password : 0})
+    res.status(200).json({
+      ok: true,
+      message: "profile returned",
+      user: userData
     });
   } catch (error) {
     res.status(500).json({
@@ -183,10 +206,13 @@ const logOutUser = (req, res) => {
   }
 };
 
-const userProfile = (req, res) => {
+const deleteUser = async (req, res) => {
   try {
+    await User.findByIdAndDelete(req.session.userId);
     res.status(200).json({
-      message: "log out successful",
+      ok: true,
+      message: "user deleted",
+      
     });
   } catch (error) {
     res.status(500).json({
@@ -194,7 +220,150 @@ const userProfile = (req, res) => {
     });
   }
 };
-module.exports = { registerUser, verifyEmail, loginUser, logOutUser, userProfile};
+
+//forget password
+const forgetPassword = async (req, res) => {
+  try {
+    const {email, password} = req.body;
+
+     if (!email || !password)
+       return res.status(400).json({
+         message: "email or password is missing",
+       });
+
+     if (password.length < 5)
+       return res.status(404).json({
+         message: "min length for password should be 5",
+       });
+
+       const user = await User.findOne({email: email });
+       if(!user) return res.status(400).json({message: "user not found"});
+
+        const hashedPassword = await securePassword(password);
+
+        // store
+        const token = jwt.sign(
+          { email, hashedPassword },
+          dev.app.jwtSecretKey,
+          { expiresIn: "10m" }
+        );
+
+        //prepare email
+        const emailData = {
+          email,
+          subject: "Account activation email",
+          html: `
+        <h2> Hello ${user.name}! </h2>
+        <p> Please click here to <a href = "${dev.app.clientUrl}/api/users/reset-password?token =${token}"
+        target = "_blank">reset password </a> </p>`, //html body
+        };
+
+        sendEmailWithNodeMailer(emailData);
+    
+    res.status(200).json({
+      ok: true,
+      message: "eamil send to reset password",
+      token: token, 
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(404).json({
+        message: "token is missing",
+      });
+    }
+    jwt.verify(token, dev.app.jwtSecretKey, async function (err, decoded) {
+      if (err) {
+        return res.status(401).json({
+          message: "token is expire",
+        });
+      }
+      const { email, hashedPassword} = decoded;
+      const isExist = await User.findOne({ email: email });
+      if (!isExist) {
+        return res.status(400).json({
+          message: "user with this email does exist",
+        });
+      }
+      //update password
+      const updateData = await User.updateOne({email: email},
+        {
+          $set : {
+            password: hashedPassword
+          }
+        })
+        if(!updateData){
+          res.status(400).json({
+        
+        message: "reset password not done",
+      });
+        }
+      
+
+      
+      
+      res.status(202).json({
+        
+        message: "reset password succesfull",
+      });
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    if(!req.fields.password){
+      /*res.status(400).json({
+        ok: false,
+        message: "no password found ",
+      });*/
+      
+    }
+    const hashedPassword = await securePassword(req.fields.password);
+    const updatedData = await User.findByIdAndUpdate(req.session.userId, 
+      {...req.fields, password: hashedPassword}, 
+      {new: true}
+      );
+
+      if(!updatedData){
+        res.status(400).json({
+          ok: false,
+          message: "user not updated",
+        });
+
+      }
+
+      if(req.files.image){
+        const {image} = req.files;
+        updatedData.image.data = fs.readFileSync(image.path);
+        updatedData.image.contentType = image.type;
+      }
+      
+      await updatedData.save();
+
+    res.status(200).json({
+      ok: true,
+      message: "user updated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+module.exports = { registerUser, verifyEmail, loginUser, logOutUser, userProfile, deleteUser, updateUser, forgetPassword, resetPassword};
 
 /*const verifyEmail = async (req, res) =>{
   try {
