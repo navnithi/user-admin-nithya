@@ -5,7 +5,7 @@ const { securePassword, comparePassword } = require("../helpers/bcryptPassword")
 const User = require("../models/users");
 const dev = require("../config");
 const { sendEmailWithNodeMailer } = require("../helpers/email");
-const { use } = require("../routes/users");
+
 
 const registerUser = async (req, res) => {
   try {
@@ -132,7 +132,7 @@ const loginUser = async (req, res) =>{
        });
 
      if (password.length < 5){
-      return res.status(404).json({
+      return res.status(400).json({
          message: "min length for password should be 5",
        });
      }
@@ -294,24 +294,23 @@ const resetPassword = async (req, res) => {
         });
       }
       //update password
-      const updateData = await User.updateOne({email: email},
+      const updateData = await User.updateOne(
+        { email: email },
         {
-          $set : {
-            password: hashedPassword
-          }
-        })
+          $set: {
+            password: hashedPassword,
+          },
+        }
+      );
         if(!updateData){
           res.status(400).json({
         
         message: "reset password not done",
       });
         }
-      
-
-      
+            
       
       res.status(202).json({
-        
         message: "reset password succesfull",
       });
     });
