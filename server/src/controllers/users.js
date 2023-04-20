@@ -5,6 +5,7 @@ const { securePassword, comparePassword } = require("../helpers/bcryptPassword")
 const User = require("../models/users");
 const dev = require("../config");
 const { sendEmailWithNodeMailer } = require("../helpers/email");
+const { errorHandler } = require("../helpers/responsehandler");
 
 
 const registerUser = async (req, res) => {
@@ -12,7 +13,7 @@ const registerUser = async (req, res) => {
     const { name, email, password, phone } = req.fields;
     const { image } = req.files;
 
-    if (!name || !email || !password || !phone || !password)
+    if (!name || !email || !password || !phone )
       return res.status(400).json({
         message: "name, email, phone or password is missing",
       });
@@ -75,9 +76,7 @@ const verifyEmail = async (req, res) => {
   try {
     const { token } = req.body;
     if (!token) {
-      return res.status(404).json({
-        message: "token is missing",
-      });
+      errorHandler(res, 400, "token is missing");
     }
     jwt.verify(token, dev.app.jwtSecretKey, async function (err, decoded) {
       if (err) {
@@ -143,6 +142,10 @@ const loginUser = async (req, res) =>{
         return res.status(400).json({
           message: "user does not exist with this email please register",
         });
+      }
+
+      if(user.isBanned){
+        errorHandler(res, 401, "user is banned")
       }
 
       const isPasswordMatched =  await comparePassword(password, user.password)
