@@ -12,7 +12,7 @@ const isAdmin = require("../middlewares/isAdmin");
 adminRouter.use(
   session({
     name: "admin_session",
-    secret: dev.app.sessionSecretKey || asdfwrew123,
+    secret: dev.app.sessionSecretKey || asdweed,
     resave: false,
     saveUninitialized: true,
     cookie: { secure: false, maxAge: 10 * 6000 },

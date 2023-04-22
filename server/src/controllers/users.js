@@ -13,10 +13,10 @@ const registerUser = async (req, res) => {
     const { name, email, password, phone } = req.fields;
     const { image } = req.files;
 
-    if (!name || !email || !password || !phone )
-      return res.status(400).json({
-        message: "name, email, phone or password is missing",
-      });
+    if (!name || !email || !password || !phone ){
+      errorHandler(res, 400, "name, email, phone or password is missing");
+    }
+     
 
     if (password.length < 5)
       return res.status(404).json({
@@ -29,7 +29,7 @@ const registerUser = async (req, res) => {
       });
     }
 
-    const isExist = await User.findOne({ email });
+    const isExist = await User.findOne({ email:email });
     if (isExist) {
       return res.status(400).json({
         message: "user already exist",

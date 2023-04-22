@@ -4,6 +4,7 @@ const User = require("../models/users");
 const isAdmin = async(req, res,next)=>{
   try {
     if (req.session.userId) {
+      console.log(req.session.userId)
         const id = req.session.userId;
         const adminData =  await User.findById(id);
         if(adminData?.is_admin === 1){
